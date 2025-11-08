@@ -3,8 +3,13 @@
 Temporal worker + REST proxy scaffold for the Drupal/WordPress orchestration use case.
 
 ## Prerequisites
-- Node.js 18+
-- Temporal server running locally (`temporal server start-dev` or docker-compose) with namespace `cms-orchestration-dev` registered (see `docs/architecture.md`).
+- [Node.js](https://nodejs.org/en/download) 18+ (`node -v`)
+- [Temporal CLI](https://docs.temporal.io/cli) (`brew install temporal`)
+- Temporal server running locally (`temporal server start-dev` or docker-compose)
+- Register namespace `cms-orchestration-dev` (see `docs/architecture.md`). 
+  `temporal operator namespace create --namespace cms-orchestration-dev` after the server starts.
+  
+For install help, follow the [Temporal TypeScript local setup guide](https://docs.temporal.io/develop/typescript/set-up-your-local-typescript) or the [docker-compose repo](https://github.com/temporalio/docker-compose).
 
 ## Setup
 ```bash
@@ -28,13 +33,15 @@ npm run dev
 ## Manual test flow
 1. **Start a workflow**
    ```bash
+   # now +30 seconds in ms
+   LAUNCH_TS=$(($(date +%s)*1000 + 30000))
    curl -X POST http://localhost:4000/workflows \
      -H 'Content-Type: application/json' \
      -d '{
        "cmsId": "12345",
        "site": "drupal",
        "locales": ["fr_CA", "es_MX"],
-       "launchTimestampMs": '$(($(date +%s%3N) + 30000))'
+       "launchTimestampMs": '"$LAUNCH_TS"'
      }'
    ```
    Capture the `workflowId` from the response.

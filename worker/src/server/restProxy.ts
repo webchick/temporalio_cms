@@ -85,7 +85,8 @@ async function startServer() {
       return res.status(202).json({ workflowId, signal: signalName });
     } catch (error) {
       logger.error(error, 'Failed to dispatch signal');
-      return res.status(500).json({ error: 'Failed to dispatch signal' });
+      const message = error instanceof Error ? error.message : 'Failed to dispatch signal';
+      return res.status(500).json({ error: message });
     }
   });
 
@@ -100,7 +101,8 @@ async function startServer() {
       return res.json({ workflowId, stage, pendingLocales });
     } catch (error) {
       logger.error(error, 'Failed to query workflow status');
-      return res.status(500).json({ error: 'Failed to query workflow status' });
+      const message = error instanceof Error ? error.message : 'Failed to query workflow status';
+      return res.status(500).json({ error: message });
     }
   });
 

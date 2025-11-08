@@ -1,5 +1,4 @@
-import { Connection } from '@temporalio/client';
-import { Runtime, Worker } from '@temporalio/worker';
+import { NativeConnection, Runtime, Worker } from '@temporalio/worker';
 import { appConfig } from './config';
 import { contentActivities } from './activities';
 import { logger } from './logger';
@@ -7,7 +6,7 @@ import { logger } from './logger';
 Runtime.install({ logger: undefined });
 
 async function run() {
-  const connection = await Connection.connect({
+  const connection = await NativeConnection.connect({
     address: appConfig.temporalAddress,
     tls: appConfig.tlsOptions
   });
