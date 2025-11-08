@@ -11,7 +11,6 @@ This repo explores how Temporal can coordinate complex editorial workflows acros
 Run the following:
 
 ```
-cd docker
 ./stack.sh up --build 
 ```
 
@@ -77,10 +76,9 @@ The `docker/` folder contains everything needed to run Temporal, the worker + RE
 
 2. **Overlay services** – `docker/docker-compose.overlay.yml` defines our worker, REST proxy, Drupal, and WordPress containers. They attach to the same `temporal-network` created by the upstream compose file.
 
-3. **One-command runner** – `docker/stack.sh` wraps the combined compose invocation:
+3. **One-command runner** – `./stack.sh` (at the repo root) wraps the combined compose invocation:
 
    ```bash
-   cd docker
    ./stack.sh up --build        # start everything
    ./stack.sh down              # stop/remove containers
    ```
