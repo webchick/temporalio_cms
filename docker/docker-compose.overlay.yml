@@ -4,7 +4,7 @@ services:
       context: ../worker
       dockerfile: Dockerfile
     env_file:
-      - ../worker/.env.example
+      - "../worker/.env.example"
     environment:
       - TEMPORAL_ADDRESS=temporal:7233
       - TEMPORAL_NAMESPACE=cms-orchestration-dev
@@ -24,7 +24,7 @@ services:
       context: ../worker
       dockerfile: Dockerfile
     env_file:
-      - ../worker/.env.example
+      - "../worker/.env.example"
     environment:
       - TEMPORAL_ADDRESS=temporal:7233
       - TEMPORAL_NAMESPACE=cms-orchestration-dev

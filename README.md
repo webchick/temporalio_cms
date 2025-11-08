@@ -14,6 +14,47 @@ Run the following:
 ./stack.sh up --build 
 ```
 
+Load up the Temporal Web UI to keep an eye on progress:
+
+http://localhost:8080/namespaces/cms-orchestration-dev/workflows
+
+Run the following curl commands to simulate a full workflow request:
+
+```
+# Start a new content publishing workflow.
+curl -X POST http://localhost:4000/workflows \                                         
+  -H 'Content-Type: application/json' \
+  -d '{
+    "cmsId": "demo-1",
+    "site": "drupal",
+    "locales": ["fr_CA","es_MX"],
+    "launchTimestampMs": '"$(($(date +%s)*1000 + 60000))"'
+  }'
+```
+
+(Make note of the workflowID, and replace it in the URLs below.)
+
+```
+# Verify translations.
+curl -X POST http://localhost:4000/signals/<workflowId>/translationComplete \          
+  -H 'Content-Type: application/json' \
+  -d '{"locale":"fr_CA"}'
+    
+curl -X POST http://localhost:4000/signals/<workflowId>/translationComplete \
+  -H 'Content-Type: application/json' \
+  -d '{"locale":"es_MX"}'        
+```
+
+```
+# Mark content as approved.
+curl -X POST http://localhost:4000/signals/content-demo-1-mhqw1r16/approvalGranted 
+```
+
+```
+# (optional) Bypass the timer and publish directly.
+curl -X POST http://localhost:4000/signals/content-demo-1-mhqw1r16/publishNow 
+```
+
 ---
 
 ## Repository Map
