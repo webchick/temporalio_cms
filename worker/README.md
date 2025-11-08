@@ -19,6 +19,25 @@ npm install
 ```
 Adjust `.env` if you are targeting a different Temporal address/namespace or need mTLS.
 
+### Temporal CLI environment config
+- From the repo root, point the Temporal CLI at the supplied profile file (see [Temporal environment configuration docs](https://docs.temporal.io/develop/environment-configuration)):
+  ```bash
+  export TEMPORAL_CONFIG_FILE="$(pwd)/config/temporal.env.toml"
+  export TEMPORAL_PROFILE=cms-dev         # or cms-staging
+  temporal config list                    # verify the CLI sees your profile
+  ```
+- The TOML file defines dev/staging connection details; edit it to match your Temporal Cloud endpoint, API key, or TLS certs as needed.
+
+### Namespace bootstrap helper
+From repo root, run:
+```bash
+./scripts/bootstrap-namespace.sh            # defaults to cms-orchestration-dev, 7-day retention
+# or override namespace / retention (RETENTION_DAYS or RETENTION_SPEC, e.g. 168h):
+RETENTION_DAYS=30 ./scripts/bootstrap-namespace.sh cms-orchestration
+RETENTION_SPEC=168h ./scripts/bootstrap-namespace.sh cms-orchestration
+```
+This uses the Temporal CLI (`temporal operator namespace ...`) and registers the Search Attributes listed in `docs/architecture.md`.
+
 ## Running locally
 In two terminals:
 ```bash
