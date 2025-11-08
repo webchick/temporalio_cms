@@ -1,0 +1,7 @@
+name: 'Temporal CMS Orchestrator'
+type: module
+core_version_requirement: ^10 || ^11
+description: 'Starts Temporal workflows from Drupal content events and surfaces workflow status.'
+package: 'Custom'
+dependencies:
+  - drupal:node

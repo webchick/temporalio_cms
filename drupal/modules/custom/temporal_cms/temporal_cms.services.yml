@@ -1,0 +1,17 @@
+services:
+  temporal_cms.temporal_client:
+    class: Drupal\temporal_cms\Service\TemporalClient
+    arguments:
+      - '@http_client'
+      - '@config.factory'
+      - '@logger.factory'
+  temporal_cms.workflow_subscriber:
+    class: Drupal\temporal_cms\EventSubscriber\NodeWorkflowSubscriber
+    arguments:
+      - '@temporal_cms.temporal_client'
+      - '@config.factory'
+      - '@keyvalue.factory'
+      - '@current_user'
+      - '@logger.factory'
+    tags:
+      - { name: event_subscriber }

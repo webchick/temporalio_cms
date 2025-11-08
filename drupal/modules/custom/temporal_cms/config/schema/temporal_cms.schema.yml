@@ -1,0 +1,26 @@
+temporal_cms.settings:
+  type: config_object
+  label: 'Temporal CMS settings'
+  mapping:
+    endpoint:
+      type: string
+      label: 'REST proxy base URL'
+    site_identifier:
+      type: string
+      label: 'Site identifier sent to Temporal'
+    default_locales:
+      type: sequence
+      label: 'Default locales'
+      sequence:
+        type: string
+    monitored_content_types:
+      type: sequence
+      label: 'Content types that auto-start workflows'
+      sequence:
+        type: string
+    start_on_create:
+      type: boolean
+      label: 'Start workflow when content is created'
+    start_on_publish:
+      type: boolean
+      label: 'Start workflow when content is published'
