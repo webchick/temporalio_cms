@@ -1,4 +1,0 @@
-FROM drupal:10-apache
-RUN apt-get update && apt-get install -y git unzip && rm -rf /var/lib/apt/lists/*
-COPY ../../drupal/modules/custom/temporal_cms /var/www/html/modules/custom/temporal_cms
-RUN chown -R www-data:www-data /var/www/html/modules/custom/temporal_cms

@@ -1,23 +1,33 @@
 # Docker & Dev Container Scaffold
 
-This directory sketches a future “one command” demo environment. It isn’t wired up yet, but the pieces below outline how we will package Temporal, worker/proxy, Drupal, and WordPress:
+This directory now contains a runnable (developer-oriented) compose stack that brings up Temporal, the Node worker + REST proxy, Drupal, and WordPress. It still requires a few manual steps inside the CMS containers, but it’s a solid starting point for an “all-in-one” demo.
 
-## Services (docker-compose)
-- Temporal server + PostgreSQL (auto-setup image)
-- Temporal Web UI
-- Node worker + REST proxy (built from `worker/`)
-- Drupal + Postgres, copying the `temporal_cms` module into the container
-- WordPress + MySQL, copying the `wp-temporal-cms` plugin
+## Services
+- `temporal` + `temporal-postgres`: Temporal auto-setup image backed by Postgres
+- `temporal-web`: Temporal Web UI on <http://localhost:8088>
+- `worker` / `rest-proxy`: Node container built from `../worker` running `npm run start:worker` and `npm run start:proxy` with source mounted for live edits
+- `drupal` + `drupal-db`: Drupal 10 (Apache) with the custom module bind-mounted, backed by Postgres
+- `wordpress` + `wordpress-db`: WordPress (Apache) with the custom plugin bind-mounted, backed by MySQL
 
-## Dockerfiles
-- `Dockerfile.drupal`, `Dockerfile.wordpress` define simple layer-on-top images that bake in our custom code
-- Worker reuses its existing Dockerfile (to be added later) to run `npm run start:worker` / `start:proxy`
+## Usage
+```bash
+cd docker
+docker compose up --build
+```
 
-## Dev Container config
-- `.devcontainer/devcontainer.json` launches the compose stack and opens VS Code in the worker container for local hacking while everything else runs alongside.
+Then:
+1. Temporal Web is at <http://localhost:8088>; run `../scripts/bootstrap-namespace.sh` once (from repo root) to register `cms-orchestration-dev`.
+2. Drupal: visit <http://localhost:8080>, complete the installer (DB host `drupal-db`, user/password `drupal`). Enable the “Temporal CMS” module via the UI or `drush en temporal_cms`. Configure the module to point at `http://rest-proxy:4000`.
+3. WordPress: visit <http://localhost:8081>, follow the installer (DB host `wordpress-db`, user/password `wordpress`, DB name `wordpress`). Activate “Temporal CMS Sync” and configure Settings → Temporal CMS to use `http://rest-proxy:4000`.
+4. Create content in either CMS and watch workflows progress in Temporal Web.
+
+The worker container mounts `../worker`, so local code edits are reflected immediately; `node_modules` live in a named volume to avoid host pollution.
 
 ## Next steps
-1. Flesh out the worker Dockerfile (multi-stage build) and mount local source files for hot reloads.
-2. Add entrypoint scripts that install Drupal/WordPress, enable modules/plugins, and seed sample content automatically.
-3. Wrap the namespace bootstrap + Temporal env config so the Temporal container registers `cms-orchestration-dev` on startup.
-4. Document `docker compose up --build` workflow plus fallback instructions for local-only setups.
+1. Add install scripts (Drush + WP-CLI) so the CMS containers auto-install + enable modules on first boot.
+2. Integrate the namespace/search-attribute bootstrap into a container entrypoint so Temporal is ready without manual CLI calls.
+3. Seed sample content and screenshots for the demo script.
+4. Optionally expose Traefik/HTTPS for friendlier URLs.
+
+## Dev Container
+`.devcontainer/devcontainer.json` consumes the same compose file so VS Code Dev Containers can open inside the worker service while the rest of the stack runs alongside.

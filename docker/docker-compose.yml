@@ -51,6 +51,9 @@ services:
     depends_on:
       - temporal
     command: ['npm','run','start:worker']
+    volumes:
+      - ../worker:/app
+      - worker-node-modules:/app/node_modules
 
   rest-proxy:
     build:
@@ -65,8 +68,11 @@ services:
     ports:
       - '4000:4000'
     depends_on:
-      - worker
+      - temporal
     command: ['npm','run','start:proxy']
+    volumes:
+      - ../worker:/app
+      - worker-node-modules:/app/node_modules
 
   drupal-db:
     image: postgres:14
@@ -78,18 +84,19 @@ services:
       - drupal-db-data:/var/lib/postgresql/data
 
   drupal:
-    build:
-      context: ../drupal
-      dockerfile: ../docker/drupal/Dockerfile
+    image: drupal:10-apache
     ports:
       - '8080:80'
     environment:
-      - DRUPAL_SITE_NAME="Temporal CMS"
+      - DRUPAL_DB_HOST=drupal-db
+      - DRUPAL_DB_USER=drupal
+      - DRUPAL_DB_PASSWORD=drupal
+      - DRUPAL_DB_NAME=drupal
       - TEMPORAL_REST_URL=http://rest-proxy:4000
     depends_on:
       - drupal-db
     volumes:
-      - drupal-modules:/var/www/html/modules/custom
+      - ../drupal/modules/custom/temporal_cms:/var/www/html/modules/custom/temporal_cms
 
   wordpress-db:
     image: mysql:8
@@ -103,9 +110,7 @@ services:
       - wordpress-db-data:/var/lib/mysql
 
   wordpress:
-    build:
-      context: ../wordpress
-      dockerfile: ../docker/wordpress/Dockerfile
+    image: wordpress:6.5-apache
     ports:
       - '8081:80'
     environment:
@@ -117,11 +122,10 @@ services:
     depends_on:
       - wordpress-db
     volumes:
-      - wordpress-plugins:/var/www/html/wp-content/plugins
+      - ../wordpress/wp-temporal-cms:/var/www/html/wp-content/plugins/wp-temporal-cms
 
 volumes:
   temporal-postgres-data:
   drupal-db-data:
   wordpress-db-data:
-  drupal-modules:
-  wordpress-plugins:
+  worker-node-modules:
