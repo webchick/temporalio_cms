@@ -56,7 +56,11 @@ class WorkflowStatusBlock extends BlockBase implements ContainerFactoryPluginInt
       return ['#markup' => $this->t('Temporal status unavailable.')];
     }
 
-    $workflowId = $this->keyValueFactory->get('temporal_cms.workflow_map')->get((string) $node->id());
+    $workflowId = NULL;
+    if ($node->hasField('temporal_workflow_id') && !$node->get('temporal_workflow_id')->isEmpty()) {
+      $workflowId = $node->get('temporal_workflow_id')->value;
+    }
+    $workflowId = $workflowId ?: $this->keyValueFactory->get('temporal_cms.workflow_map')->get((string) $node->id());
     if (!$workflowId) {
       return ['#markup' => $this->t('No Temporal workflow linked.')];
     }

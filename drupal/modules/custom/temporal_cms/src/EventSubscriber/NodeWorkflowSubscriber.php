@@ -3,6 +3,7 @@
 namespace Drupal\temporal_cms\EventSubscriber;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\KeyValueStore\KeyValueFactoryInterface;
 use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
@@ -19,12 +20,15 @@ class NodeWorkflowSubscriber implements EventSubscriberInterface {
 
   protected const STORE_KEY = 'temporal_cms.workflow_map';
 
+  private bool $suppressStart = FALSE;
+
   public function __construct(
     private readonly TemporalClient $temporalClient,
     private readonly ConfigFactoryInterface $configFactory,
     private readonly KeyValueFactoryInterface $keyValueFactory,
     private readonly AccountProxyInterface $currentUser,
     private readonly LoggerChannelFactoryInterface $loggerFactory,
+    private readonly EntityTypeManagerInterface $entityTypeManager,
   ) {}
 
   public static function getSubscribedEvents(): array {
@@ -35,10 +39,16 @@ class NodeWorkflowSubscriber implements EventSubscriberInterface {
   }
 
   public function onNodeInsert(NodeInsertEvent $event): void {
+    if ($this->suppressStart) {
+      return;
+    }
     $this->maybeStartWorkflow($event->getNode(), 'create');
   }
 
   public function onNodeUpdate(NodeUpdateEvent $event): void {
+    if ($this->suppressStart) {
+      return;
+    }
     $node = $event->getOriginal();
     $updated = $event->getNode();
 
@@ -76,6 +86,22 @@ class NodeWorkflowSubscriber implements EventSubscriberInterface {
         '@workflow' => $workflowId,
         '@nid' => $node->id(),
       ]);
+      $this->persistWorkflowId($node, $workflowId);
+    }
+  }
+
+  protected function persistWorkflowId(Node $node, string $workflowId): void {
+    if (!$node->hasField('temporal_workflow_id')) {
+      return;
+    }
+
+    $node->set('temporal_workflow_id', $workflowId);
+    $this->suppressStart = TRUE;
+    try {
+      $this->entityTypeManager->getStorage('node')->save($node);
+    }
+    finally {
+      $this->suppressStart = FALSE;
     }
   }
 }

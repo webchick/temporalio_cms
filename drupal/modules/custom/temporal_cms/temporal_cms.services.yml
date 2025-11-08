@@ -13,5 +13,6 @@ services:
       - '@keyvalue.factory'
       - '@current_user'
       - '@logger.factory'
+      - '@entity_type.manager'
     tags:
       - { name: event_subscriber }

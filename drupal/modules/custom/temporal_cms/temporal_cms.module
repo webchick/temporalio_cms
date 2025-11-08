@@ -1,4 +1,26 @@
 <?php
+
+use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\Field\BaseFieldDefinition;
+
 /**
- * Temporal CMS module.
+ * Implements hook_entity_base_field_info().
  */
+function temporal_cms_entity_base_field_info(EntityTypeInterface $entity_type) {
+  $fields = [];
+
+  if ($entity_type->id() === 'node') {
+    $fields['temporal_workflow_id'] = BaseFieldDefinition::create('string')
+      ->setLabel(t('Temporal workflow ID'))
+      ->setDescription(t('Stores the ID of the Temporal workflow linked to this content.'))
+      ->setReadOnly(FALSE)
+      ->setDefaultValue('')
+      ->setDisplayOptions('view', [
+        'type' => 'hidden',
+      ])
+      ->setDisplayConfigurable('view', FALSE)
+      ->setDisplayConfigurable('form', FALSE);
+  }
+
+  return $fields;
+}
