@@ -1,0 +1,127 @@
+version: '3.9'
+
+services:
+  temporal:
+    image: temporalio/auto-setup:1.23
+    environment:
+      - DB=postgresql
+      - POSTGRES_USER=temporal
+      - POSTGRES_PASSWORD=temporal
+      - POSTGRES_DB=temporal
+    ports:
+      - '7233:7233'
+      - '7234:7234'
+      - '7235:7235'
+      - '7239:7239'
+    depends_on:
+      - temporal-postgres
+
+  temporal-postgres:
+    image: postgres:14
+    environment:
+      - POSTGRES_PASSWORD=temporal
+      - POSTGRES_USER=temporal
+      - POSTGRES_DB=temporal
+    ports:
+      - '5432:5432'
+    volumes:
+      - temporal-postgres-data:/var/lib/postgresql/data
+
+  temporal-web:
+    image: temporalio/web:2.30
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CORS_ORIGINS=http://localhost:3000
+    ports:
+      - '8088:8088'
+    depends_on:
+      - temporal
+
+  worker:
+    build:
+      context: ../worker
+      dockerfile: Dockerfile
+    env_file:
+      - ../worker/.env.example
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_NAMESPACE=cms-orchestration-dev
+      - WORKFLOW_TASK_QUEUE=cms.workflow.queue
+      - ACTIVITY_TASK_QUEUE=cms.activity.queue
+    depends_on:
+      - temporal
+    command: ['npm','run','start:worker']
+
+  rest-proxy:
+    build:
+      context: ../worker
+      dockerfile: Dockerfile
+    env_file:
+      - ../worker/.env.example
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_NAMESPACE=cms-orchestration-dev
+      - WORKFLOW_TASK_QUEUE=cms.workflow.queue
+    ports:
+      - '4000:4000'
+    depends_on:
+      - worker
+    command: ['npm','run','start:proxy']
+
+  drupal-db:
+    image: postgres:14
+    environment:
+      - POSTGRES_DB=drupal
+      - POSTGRES_USER=drupal
+      - POSTGRES_PASSWORD=drupal
+    volumes:
+      - drupal-db-data:/var/lib/postgresql/data
+
+  drupal:
+    build:
+      context: ../drupal
+      dockerfile: ../docker/drupal/Dockerfile
+    ports:
+      - '8080:80'
+    environment:
+      - DRUPAL_SITE_NAME="Temporal CMS"
+      - TEMPORAL_REST_URL=http://rest-proxy:4000
+    depends_on:
+      - drupal-db
+    volumes:
+      - drupal-modules:/var/www/html/modules/custom
+
+  wordpress-db:
+    image: mysql:8
+    environment:
+      - MYSQL_ROOT_PASSWORD=wordpress
+      - MYSQL_DATABASE=wordpress
+      - MYSQL_USER=wordpress
+      - MYSQL_PASSWORD=wordpress
+    command: ['--default-authentication-plugin=mysql_native_password']
+    volumes:
+      - wordpress-db-data:/var/lib/mysql
+
+  wordpress:
+    build:
+      context: ../wordpress
+      dockerfile: ../docker/wordpress/Dockerfile
+    ports:
+      - '8081:80'
+    environment:
+      - WORDPRESS_DB_HOST=wordpress-db
+      - WORDPRESS_DB_USER=wordpress
+      - WORDPRESS_DB_PASSWORD=wordpress
+      - WORDPRESS_DB_NAME=wordpress
+      - TEMPORAL_REST_URL=http://rest-proxy:4000
+    depends_on:
+      - wordpress-db
+    volumes:
+      - wordpress-plugins:/var/www/html/wp-content/plugins
+
+volumes:
+  temporal-postgres-data:
+  drupal-db-data:
+  wordpress-db-data:
+  drupal-modules:
+  wordpress-plugins:

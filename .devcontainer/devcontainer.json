@@ -1,0 +1,17 @@
+{
+  "name": "Temporal CMS Demo",
+  "dockerComposeFile": ["../docker/docker-compose.yml"],
+  "service": "worker",
+  "workspaceFolder": "/workspace",
+  "runServices": ["temporal", "temporal-web", "worker", "rest-proxy", "drupal", "drupal-db", "wordpress", "wordpress-db"],
+  "postCreateCommand": "npm install",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "bmewburn.vscode-intelephense-client",
+        "esbenp.prettier-vscode"
+      ]
+    }
+  }
+}
