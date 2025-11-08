@@ -13,5 +13,6 @@ temporal_cms.signal:
     _title: 'Send Temporal signal'
   requirements:
     _permission: 'access content'
+    node: '\\d+'
   options:
     _admin_route: FALSE
