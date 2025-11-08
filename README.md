@@ -6,6 +6,15 @@ This repo explores how Temporal can coordinate complex editorial workflows acros
 2. **Adapters** – CMS-specific modules/plugins that start workflows from UI events and surface live status/actions to editors.
 3. **Infrastructure scaffolding** – Docker/Dev Container plans (`docker/`, `.devcontainer/`) to spin up Temporal + worker + CMS instances, plus a `simple-demo/` directory outlining a smaller “Scheduled Publish” tutorial.
 
+## Quickstart
+
+Run the following:
+
+```
+cd docker
+./stack.sh up --build 
+```
+
 ---
 
 ## Repository Map
@@ -17,7 +26,7 @@ This repo explores how Temporal can coordinate complex editorial workflows acros
 | `wordpress/wp-temporal-cms/` | WordPress plugin mirroring the Drupal integration (meta box, settings page, signals). |
 | `docs/` | Architecture overview (`architecture.md`) and demo script (`demo-script.md`). |
 | `scripts/` | Namespace/search-attribute bootstrap helper. |
-| `docker/` | Early docker-compose + Dockerfiles for a one-command demo (Temporal, worker, Drupal, WordPress). |
+| `docker/` | Docker stack + helper script (`stack.sh`) that reuses the official Temporal docker-compose via git submodule. |
 | `.devcontainer/` | Dev Container config pointing at the docker-compose stack. |
 | `simple-demo/` | Blueprint for a minimal Temporal + Drupal “Scheduled Publish” tutorial. |
 
@@ -56,15 +65,33 @@ See `docs/demo-script.md` for a step-by-step showcase.
 
 ---
 
-## Docker / Dev Container (WIP)
+## Docker Demo Stack
 
-`docker/docker-compose.yml` outlines a future “one command” stack: Temporal server, Temporal Web, worker/proxy, Drupal + Postgres, WordPress + MySQL. The Dockerfiles currently bake the adapters into the CMS images; finishing work includes:
+The `docker/` folder contains everything needed to run Temporal, the worker + REST proxy, Drupal, and WordPress together:
 
-1. Worker Dockerfile + hot-reload.
-2. Drupal/WP install scripts & sample data seed.
-3. Automatic namespace bootstrap + Temporal env config at container startup.
+1. **Temporal submodule** – we pull in <https://github.com/temporalio/docker-compose> as `docker/temporal/`. It provides the official Temporal/Postgres/Elasticsearch/UI services. The helper script automatically initializes this submodule the first time you run it, but you can also do it manually with:
 
-`.devcontainer/devcontainer.json` lets VS Code start the compose stack and attach to the worker container for local hacking.
+   ```bash
+   git submodule update --init --recursive
+   ```
+
+2. **Overlay services** – `docker/docker-compose.overlay.yml` defines our worker, REST proxy, Drupal, and WordPress containers. They attach to the same `temporal-network` created by the upstream compose file.
+
+3. **One-command runner** – `docker/stack.sh` wraps the combined compose invocation:
+
+   ```bash
+   cd docker
+   ./stack.sh up --build        # start everything
+   ./stack.sh down              # stop/remove containers
+   ```
+
+   After the stack is up, visit:
+   - Temporal UI: `http://localhost:8080` (or the port you remap it to)
+   - Drupal: `http://localhost:8080` (change if you have conflicts)
+   - WordPress: `http://localhost:8081`
+   - Worker REST proxy: `http://localhost:4000`
+
+`.devcontainer/devcontainer.json` still lets VS Code start the same compose stack and drop you inside the worker container for local hacking.
 
 ---
 
