@@ -1,20 +1,18 @@
 # Docker & Dev Container Scaffold
 
-This directory now contains a runnable (developer-oriented) compose stack that brings up Temporal, the Node worker + REST proxy, Drupal, and WordPress. It still requires a few manual steps inside the CMS containers, but it’s a solid starting point for an “all-in-one” demo.
+This directory now contains a runnable (developer-oriented) compose stack that brings up Temporal, the Node worker + REST proxy, Drupal, and WordPress. The Temporal services come directly from the official `temporalio/docker-compose` project (pulled in as a git submodule) and we layer our CMS adapters on top.
 
 ## Services
-- Temporal stack comes from `temporal/docker-compose.yml` (official repo). We layer our services via `docker-compose.overlay.yml`.
+- Temporal stack comes from `temporal/docker-compose.yml` (submodule). We layer our services via `docker-compose.overlay.yml`.
 - `worker` / `rest-proxy`: Node container built from `../worker`, running `npm run start:worker` / `start:proxy` with live mounts.
 - `drupal` + `drupal-db`: Drupal 10 (Apache) with the custom module bind-mounted, backed by MySQL 8.0.
 - `wordpress` + `wordpress-db`: WordPress (Apache) with the custom plugin bind-mounted, backed by MySQL.
 
 ## Usage
 ```bash
+git submodule update --init --recursive   # first time after cloning
 cd docker
-docker compose \
-  -f temporal/docker-compose.yml \
-  -f docker-compose.overlay.yml \
-  up --build
+./stack.sh up --build
 ```
 
 Then:
