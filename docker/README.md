@@ -3,21 +3,23 @@
 This directory now contains a runnable (developer-oriented) compose stack that brings up Temporal, the Node worker + REST proxy, Drupal, and WordPress. It still requires a few manual steps inside the CMS containers, but it’s a solid starting point for an “all-in-one” demo.
 
 ## Services
-- `temporal` + `temporal-postgres`: Temporal auto-setup image backed by Postgres
-- `temporal-web`: Temporal Web UI on <http://localhost:8088>
-- `worker` / `rest-proxy`: Node container built from `../worker` running `npm run start:worker` and `npm run start:proxy` with source mounted for live edits
-- `drupal` + `drupal-db`: Drupal 10 (Apache) with the custom module bind-mounted, backed by Postgres
-- `wordpress` + `wordpress-db`: WordPress (Apache) with the custom plugin bind-mounted, backed by MySQL
+- Temporal stack comes from `temporal/docker-compose.yml` (official repo). We layer our services via `docker-compose.overlay.yml`.
+- `worker` / `rest-proxy`: Node container built from `../worker`, running `npm run start:worker` / `start:proxy` with live mounts.
+- `drupal` + `drupal-db`: Drupal 10 (Apache) with the custom module bind-mounted, backed by MySQL 8.0.
+- `wordpress` + `wordpress-db`: WordPress (Apache) with the custom plugin bind-mounted, backed by MySQL.
 
 ## Usage
 ```bash
 cd docker
-docker compose up --build
+docker compose \
+  -f temporal/docker-compose.yml \
+  -f docker-compose.overlay.yml \
+  up --build
 ```
 
 Then:
 1. Temporal Web is at <http://localhost:8088>; run `../scripts/bootstrap-namespace.sh` once (from repo root) to register `cms-orchestration-dev`.
-2. Drupal: visit <http://localhost:8080>, complete the installer (DB host `drupal-db`, user/password `drupal`). Enable the “Temporal CMS” module via the UI or `drush en temporal_cms`. Configure the module to point at `http://rest-proxy:4000`.
+2. Drupal: visit <http://localhost:8080>, complete the installer (DB driver MySQL, host `drupal-db`, database `drupal`, user/password `drupal`). Enable the “Temporal CMS” module via the UI or `drush en temporal_cms`. Configure the module to point at `http://rest-proxy:4000`.
 3. WordPress: visit <http://localhost:8081>, follow the installer (DB host `wordpress-db`, user/password `wordpress`, DB name `wordpress`). Activate “Temporal CMS Sync” and configure Settings → Temporal CMS to use `http://rest-proxy:4000`.
 4. Create content in either CMS and watch workflows progress in Temporal Web.
 
