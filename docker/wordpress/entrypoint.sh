@@ -73,8 +73,6 @@ install_wordpress() {
     wp --path="${WP_PATH}" option update temporal_cms_rest_url "${TEMPORAL_URL}" >/dev/null 2>&1 || true
   fi
 
-  wp --path="${WP_PATH}" theme install twentytwentyfive --activate
-
   log "WordPress install complete."
 }
 
