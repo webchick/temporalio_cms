@@ -75,21 +75,11 @@ wait_for_admin_tools() {
 if [[ "$CMD" == up ]]; then
   log "Starting core Temporal services"
   run_quiet docker compose "${BASE_FILES[@]}" up -d temporal temporal-admin-tools postgresql elasticsearch
-  if wait_for_admin_tools; then
-    if wait_for_temporal; then
-      log "Bootstrapping namespace & search attributes"
-      namespace_bootstrap || log "Warning: namespace bootstrap failed" >&2
-    else
-      log "Skipping namespace bootstrap because Temporal never became ready" >&2
-    fi
+  if wait_for_admin_tools && wait_for_temporal; then
     log "Bootstrapping namespace & search attributes"
-    if namespace_bootstrap; then
-      log "Namespace bootstrap complete"
-    else
-      log "Warning: namespace bootstrap failed" >&2
-    fi
+    namespace_bootstrap || log "Warning: namespace bootstrap failed" >&2
   else
-    log "Skipping namespace bootstrap because admin tools were not ready" >&2
+    log "Skipping namespace bootstrap because admin tools or Temporal were not ready" >&2
   fi
 fi
 

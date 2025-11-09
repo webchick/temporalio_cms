@@ -66,7 +66,7 @@ curl -X POST http://localhost:4000/signals/content-demo-1-mhqw1r16/publishNow
 | `wordpress/wp-temporal-cms/` | WordPress plugin mirroring the Drupal integration (meta box, settings page, signals). |
 | `docs/` | Architecture overview (`architecture.md`) and demo script (`demo-script.md`). |
 | `scripts/` | Namespace/search-attribute bootstrap helper. |
-| `docker/` | Docker stack + helper script (`stack.sh`) that reuses the official Temporal docker-compose via git submodule. |
+| `docker/` | Docker stack + helper script (`stack.sh`) that reuses the official Temporal docker-compose via git submodule and builds Drupal CMS/WordPress adapter containers. |
 | `.devcontainer/` | Dev Container config pointing at the docker-compose stack. |
 | `simple-demo/` | Blueprint for a minimal Temporal + Drupal “Scheduled Publish” tutorial. |
 
@@ -115,7 +115,7 @@ The `docker/` folder contains everything needed to run Temporal, the worker + RE
    git submodule update --init --recursive
    ```
 
-2. **Overlay services** – `docker/docker-compose.overlay.yml` defines our worker, REST proxy, Drupal, and WordPress containers. They attach to the same `temporal-network` created by the upstream compose file.
+2. **Overlay services** – `docker/docker-compose.overlay.yml` defines our worker, REST proxy, Drupal, and WordPress containers. Drupal is built from `docker/drupal-cms/Dockerfile`, which bakes the Drupal CMS distribution into the image. All services attach to the same `temporal-network` created by the upstream compose file.
 
 3. **One-command runner** – `./stack.sh` (at the repo root) wraps the combined compose invocation:
 
