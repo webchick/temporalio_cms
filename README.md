@@ -123,6 +123,7 @@ The `docker/` folder contains everything needed to run Temporal, the worker + RE
 2. **Overlay services** – `docker/docker-compose.overlay.yml` defines our worker, REST proxy, Drupal, and WordPress containers. Drupal is built from `docker/drupal-cms/Dockerfile`, which bakes the Drupal CMS distribution into the image. All services attach to the same `temporal-network` created by the upstream compose file.
    - The Drupal container waits for `drupal-db`, then runs `drush site:install drupal_cms_installer` automatically with the credentials defined in the compose file (see the `DRUPAL_*` variables to override site name/admin login).
    - WordPress is built from `docker/wordpress/Dockerfile`, installs WP-CLI, auto-installs core via the standard installer, activates the Temporal plugin, and honors the `WORDPRESS_*` variables for site/admin settings.
+   - MySQL, Postgres, Elasticsearch, and the Temporal admin tools all expose Docker health checks; dependent services declare `depends_on: condition: service_healthy`, so `./stack.sh up` waits for everything to become ready before bootstrapping namespaces.
 
 3. **One-command runner** – `./stack.sh` (at the repo root) wraps the combined compose invocation:
 
