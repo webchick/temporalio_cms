@@ -91,14 +91,22 @@ services:
       - temporal-network
 
   wordpress:
-    image: wordpress:6.5-apache
+    build:
+      context: ..
+      dockerfile: wordpress/Dockerfile
     ports:
       - '8081:80'
     environment:
       - WORDPRESS_DB_HOST=wordpress-db
+      - WORDPRESS_DB_PORT=3306
       - WORDPRESS_DB_USER=wordpress
       - WORDPRESS_DB_PASSWORD=wordpress
       - WORDPRESS_DB_NAME=wordpress
+      - WORDPRESS_SITE_URL=http://localhost:8081
+      - WORDPRESS_SITE_TITLE=Temporal WordPress Demo
+      - WORDPRESS_ADMIN_USER=admin
+      - WORDPRESS_ADMIN_PASSWORD=admin
+      - WORDPRESS_ADMIN_EMAIL=admin@example.com
       - TEMPORAL_REST_URL=http://rest-proxy:4000
     depends_on:
       - wordpress-db

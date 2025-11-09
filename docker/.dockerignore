@@ -1,0 +1,2 @@
+# Ensure docker context includes WordPress plugin
+!wordpress/wp-temporal-cms/**

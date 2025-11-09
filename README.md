@@ -17,7 +17,7 @@ Run the following:
 Once the containers settle you can visit each CMS directly:
 
 - Drupal CMS (auto-installed with its recipe + the Temporal adapter): <http://localhost:8082> — default admin login `admin / admin` (configurable via `DRUPAL_ADMIN_*` in `docker/docker-compose.overlay.yml`).
-- WordPress (standard first-run installer): <http://localhost:8081>.
+- WordPress (auto-installed with the Temporal plugin enabled): <http://localhost:8081> — default admin login `admin / admin` (override via `WORDPRESS_ADMIN_*` in `docker/docker-compose.overlay.yml`).
 
 Load up the Temporal Web UI to keep an eye on progress:
 
@@ -122,13 +122,15 @@ The `docker/` folder contains everything needed to run Temporal, the worker + RE
 
 2. **Overlay services** – `docker/docker-compose.overlay.yml` defines our worker, REST proxy, Drupal, and WordPress containers. Drupal is built from `docker/drupal-cms/Dockerfile`, which bakes the Drupal CMS distribution into the image. All services attach to the same `temporal-network` created by the upstream compose file.
    - The Drupal container waits for `drupal-db`, then runs `drush site:install drupal_cms_installer` automatically with the credentials defined in the compose file (see the `DRUPAL_*` variables to override site name/admin login).
-   - WordPress still uses its regular first-run wizard; you can complete it at <http://localhost:8081>.
+   - WordPress is built from `docker/wordpress/Dockerfile`, installs WP-CLI, auto-installs core via the standard installer, activates the Temporal plugin, and honors the `WORDPRESS_*` variables for site/admin settings.
 
 3. **One-command runner** – `./stack.sh` (at the repo root) wraps the combined compose invocation:
 
    ```bash
    ./stack.sh up --build        # start everything
    ./stack.sh down              # stop/remove containers
+   ./stack.sh down --wipe       # stop and delete volumes (destructive)
+   ./stack.sh reset             # alias for down --wipe
    ```
 
   After the stack is up, visit:

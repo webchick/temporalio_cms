@@ -23,6 +23,24 @@ ALL_FILES=(-f docker/temporal/docker-compose.yml -f docker/docker-compose.overla
 CMD=${1:-up}
 shift $(( $# > 0 ? 1 : 0 ))
 
+WIPE=0
+ARGS=()
+for arg in "$@"; do
+  case "$arg" in
+    --wipe|--reset)
+      WIPE=1
+      ;;
+    *)
+      ARGS+=("$arg")
+      ;;
+  esac
+done
+
+if [[ "$CMD" == "reset" ]]; then
+  CMD="down"
+  WIPE=1
+fi
+
 wait_for_temporal() {
   log "Waiting for Temporal frontend"
   for attempt in {1..60}; do
@@ -83,5 +101,18 @@ if [[ "$CMD" == up ]]; then
   fi
 fi
 
-log "Executing docker compose $CMD $*"
-exec docker compose "${ALL_FILES[@]}" "$CMD" "$@"
+extra=()
+if [[ "$WIPE" -eq 1 && "$CMD" == "down" ]]; then
+  log "Wipe requested: removing containers, networks, and volumes"
+  extra+=(--volumes --remove-orphans)
+fi
+
+log "Executing docker compose $CMD ${ARGS[*]:-}"
+compose_cmd=("${ALL_FILES[@]}" "$CMD")
+if (( ${#extra[@]} )); then
+  compose_cmd+=("${extra[@]}")
+fi
+if (( ${#ARGS[@]} )); then
+  compose_cmd+=("${ARGS[@]}")
+fi
+exec docker compose "${compose_cmd[@]}"
