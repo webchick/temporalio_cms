@@ -34,8 +34,6 @@ ALL_FILES=(-f docker/temporal/docker-compose.yml -f docker/docker-compose.overla
 # - up = docker compose up --build
 # - down = docker compose down
 # - reset = docker compose down --volumes --remove-orphans + recreate namespace
-
-
 CMD=up
 if [[ $# -gt 0 ]]; then
   CMD=$1
@@ -48,6 +46,7 @@ if [[ "$CMD" == "reset" ]]; then
   RESET=1
 fi
 
+# Ensures the Temporal server has the namespace and search attributes our demo relies on.
 namespace_bootstrap() {
   local cli=(docker compose "${BASE_FILES[@]}" exec -T temporal-admin-tools temporal operator)
   if run_quiet "${cli[@]}" namespace describe cms-orchestration-dev; then
@@ -70,6 +69,7 @@ namespace_bootstrap() {
   done
 }
 
+# We can't create namespaces and signals until the Temporal API is reachable.
 wait_for_temporal_api() {
   log "Waiting for Temporal API to accept CLI connections"
   for attempt in {1..30}; do
@@ -84,6 +84,7 @@ wait_for_temporal_api() {
   return 1
 }
 
+# Rebuild all the things!
 if [[ "$CMD" == up ]]; then
   log "Starting core Temporal services (waiting for health checks)"
   run_quiet docker compose "${BASE_FILES[@]}" up --build -d --wait temporal temporal-admin-tools postgresql elasticsearch
@@ -96,6 +97,7 @@ if [[ "$CMD" == up ]]; then
   fi
 fi
 
+# DESTROY all the things!
 extra=()
 if [[ "$RESET" -eq 1 && "$CMD" == "down" ]]; then
 ARGS=("$@")
@@ -103,6 +105,7 @@ RESET=0  log "Reset requested: removing containers, networks, and volumes"
   extra+=(--volumes --remove-orphans)
 fi
 
+# Finally, run the requested docker compose command.
 log "Executing docker compose $CMD ${ARGS[*]:-}"
 compose_cmd=("${ALL_FILES[@]}" "$CMD")
 if (( ${#extra[@]} )); then
