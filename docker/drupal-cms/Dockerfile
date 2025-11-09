@@ -11,7 +11,9 @@ WORKDIR /src
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j"$(nproc)" gd \
     && composer create-project drupal/cms /src \
-       --no-interaction --no-progress
+       --no-interaction --no-progress \
+    && cd /src \
+    && composer require drush/drush --no-interaction --no-progress
 
 FROM drupal:11-apache
 
@@ -24,6 +26,7 @@ RUN apt-get update \
         libzip-dev \
         libxml2-dev \
         libonig-dev \
+        default-mysql-client \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j"$(nproc)" \
          gd intl pdo_mysql zip opcache \
@@ -34,4 +37,10 @@ COPY --from=build /src/ /opt/drupal/
 
 RUN rm -rf /var/www/html \
     && ln -s /opt/drupal/web /var/www/html \
+    && echo "memory_limit=256M" > /usr/local/etc/php/conf.d/memory-limit.ini \
     && chown -R www-data:www-data /opt/drupal
+
+COPY drupal-cms/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]

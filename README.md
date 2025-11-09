@@ -14,6 +14,11 @@ Run the following:
 ./stack.sh up --build 
 ```
 
+Once the containers settle you can visit each CMS directly:
+
+- Drupal CMS (auto-installed with its recipe + the Temporal adapter): <http://localhost:8082> — default admin login `admin / admin` (configurable via `DRUPAL_ADMIN_*` in `docker/docker-compose.overlay.yml`).
+- WordPress (standard first-run installer): <http://localhost:8081>.
+
 Load up the Temporal Web UI to keep an eye on progress:
 
 http://localhost:8080/namespaces/cms-orchestration-dev/workflows
@@ -116,6 +121,8 @@ The `docker/` folder contains everything needed to run Temporal, the worker + RE
    ```
 
 2. **Overlay services** – `docker/docker-compose.overlay.yml` defines our worker, REST proxy, Drupal, and WordPress containers. Drupal is built from `docker/drupal-cms/Dockerfile`, which bakes the Drupal CMS distribution into the image. All services attach to the same `temporal-network` created by the upstream compose file.
+   - The Drupal container waits for `drupal-db`, then runs `drush site:install drupal_cms_installer` automatically with the credentials defined in the compose file (see the `DRUPAL_*` variables to override site name/admin login).
+   - WordPress still uses its regular first-run wizard; you can complete it at <http://localhost:8081>.
 
 3. **One-command runner** – `./stack.sh` (at the repo root) wraps the combined compose invocation:
 
@@ -124,11 +131,11 @@ The `docker/` folder contains everything needed to run Temporal, the worker + RE
    ./stack.sh down              # stop/remove containers
    ```
 
-   After the stack is up, visit:
-   - Temporal UI: `http://localhost:8080` (or the port you remap it to)
-   - Drupal: `http://localhost:8080` (change if you have conflicts)
-   - WordPress: `http://localhost:8081`
-   - Worker REST proxy: `http://localhost:4000`
+  After the stack is up, visit:
+  - Temporal UI: `http://localhost:8080` (or the port you remap it to)
+  - Drupal CMS: `http://localhost:8082`
+  - WordPress: `http://localhost:8081`
+  - Worker REST proxy: `http://localhost:4000`
 
 `.devcontainer/devcontainer.json` still lets VS Code start the same compose stack and drop you inside the worker container for local hacking.
 
