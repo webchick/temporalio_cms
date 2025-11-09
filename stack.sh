@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
+# This wrapper keeps Temporal's upstream compose (via submodule) and our overlay
+# in sync, handling bootstrap + logging in one place.
+
+# Set strict error handling.
 set -euo pipefail
 
+# Establish logging.
 LOG_FILE="${STACK_LOG:-$(pwd)/stack.log}"
 mkdir -p "$(dirname "$LOG_FILE")"
 : >"$LOG_FILE"
@@ -9,19 +14,27 @@ log() {
   printf '[%s] %s\n' "$(date +"%Y-%m-%dT%H:%M:%S%z")" "$*" | tee -a "$LOG_FILE" >&2
 }
 
+# Pipe commands to log file.
 run_quiet() {
   log "Running: $*"
   "$@" >>"$LOG_FILE" 2>&1
 }
 
+# Temporal has some hankiness so we lean on their docker compose setup.
+# Pull in the official Temporal docker-compose so we stay aligned with upstream.
 log "Initializing Temporal docker-compose submodule"
 run_quiet git submodule update --init --recursive
 
+# Combine both the base and overlay docker-compose files.
 BASE_FILES=(-f docker/temporal/docker-compose.yml)
 ALL_FILES=(-f docker/temporal/docker-compose.yml -f docker/docker-compose.overlay.yml)
 
-CMD=${1:-up}
-shift $(( $# > 0 ? 1 : 0 ))
+# Figure out which command we're doing based on the first script argument.
+CMD=up
+if [[ $# -gt 0 ]]; then
+  CMD=$1
+  shift
+fi
 
 WIPE=0
 ARGS=()

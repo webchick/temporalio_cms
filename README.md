@@ -128,10 +128,9 @@ The `docker/` folder contains everything needed to run Temporal, the worker + RE
 3. **One-command runner** – `./stack.sh` (at the repo root) wraps the combined compose invocation:
 
    ```bash
-   ./stack.sh up --build        # start everything
-   ./stack.sh down              # stop/remove containers
-   ./stack.sh down --wipe       # stop and delete volumes (destructive)
-   ./stack.sh reset             # alias for down --wipe
+   ./stack.sh up --build   # start everything
+   ./stack.sh down         # stop/remove containers
+   ./stack.sh reset        # stop and delete volumes (destructive)
    ```
 
   After the stack is up, visit:
