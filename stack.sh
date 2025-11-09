@@ -30,28 +30,22 @@ BASE_FILES=(-f docker/temporal/docker-compose.yml)
 ALL_FILES=(-f docker/temporal/docker-compose.yml -f docker/docker-compose.overlay.yml)
 
 # Figure out which command we're doing based on the first script argument.
+# Valid commands:
+# - up = docker compose up --build
+# - down = docker compose down
+# - reset = docker compose down --volumes --remove-orphans + recreate namespace
+
+
 CMD=up
 if [[ $# -gt 0 ]]; then
   CMD=$1
   shift
 fi
-
-WIPE=0
-ARGS=()
-for arg in "$@"; do
-  case "$arg" in
-    --wipe|--reset)
-      WIPE=1
-      ;;
-    *)
-      ARGS+=("$arg")
-      ;;
-  esac
-done
-
+ARGS=("$@")
+RESET=0
 if [[ "$CMD" == "reset" ]]; then
   CMD="down"
-  WIPE=1
+  RESET=1
 fi
 
 namespace_bootstrap() {
@@ -76,16 +70,36 @@ namespace_bootstrap() {
   done
 }
 
+wait_for_temporal_api() {
+  log "Waiting for Temporal API to accept CLI connections"
+  for attempt in {1..30}; do
+    if docker compose "${BASE_FILES[@]}" exec -T temporal-admin-tools \
+         temporal operator cluster health >/dev/null 2>&1; then
+      log "Temporal API is reachable"
+      return 0
+    fi
+    sleep 2
+  done
+  log "Temporal API did not become reachable in time" >&2
+  return 1
+}
+
 if [[ "$CMD" == up ]]; then
   log "Starting core Temporal services (waiting for health checks)"
-  run_quiet docker compose "${BASE_FILES[@]}" up -d --wait temporal temporal-admin-tools postgresql elasticsearch
-  log "Bootstrapping namespace & search attributes"
-  namespace_bootstrap || log "Warning: namespace bootstrap failed" >&2
+  run_quiet docker compose "${BASE_FILES[@]}" up --build -d --wait temporal temporal-admin-tools postgresql elasticsearch
+  if wait_for_temporal_api; then
+    log "Bootstrapping namespace & search attributes"
+
+    namespace_bootstrap || log "Warning: namespace bootstrap failed" >&2
+  else
+    log "Skipping namespace bootstrap because Temporal API was unavailable" >&2
+  fi
 fi
 
 extra=()
-if [[ "$WIPE" -eq 1 && "$CMD" == "down" ]]; then
-  log "Wipe requested: removing containers, networks, and volumes"
+if [[ "$RESET" -eq 1 && "$CMD" == "down" ]]; then
+ARGS=("$@")
+RESET=0  log "Reset requested: removing containers, networks, and volumes"
   extra+=(--volumes --remove-orphans)
 fi
 
