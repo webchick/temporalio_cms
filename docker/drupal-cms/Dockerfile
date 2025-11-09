@@ -6,9 +6,10 @@ RUN apk add --no-cache \
     libjpeg-turbo-dev \
     freetype-dev \
     icu-dev \
-    libzip-dev
+    libzip-dev \
+    libwebp-dev
 WORKDIR /src
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-install -j"$(nproc)" gd \
     && composer create-project drupal/cms /src \
        --no-interaction --no-progress \
@@ -26,8 +27,9 @@ RUN apt-get update \
         libzip-dev \
         libxml2-dev \
         libonig-dev \
+        libwebp-dev \
         default-mysql-client \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-install -j"$(nproc)" \
          gd intl pdo_mysql zip opcache \
     && rm -rf /var/lib/apt/lists/*
@@ -37,7 +39,7 @@ COPY --from=build /src/ /opt/drupal/
 
 RUN rm -rf /var/www/html \
     && ln -s /opt/drupal/web /var/www/html \
-    && echo "memory_limit=256M" > /usr/local/etc/php/conf.d/memory-limit.ini \
+    && printf "memory_limit=256M\ndisplay_errors=Off\nerror_reporting=E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED\n" > /usr/local/etc/php/conf.d/memory-limit.ini \
     && chown -R www-data:www-data /opt/drupal
 
 COPY drupal-cms/entrypoint.sh /entrypoint.sh
