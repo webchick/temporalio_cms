@@ -19,6 +19,8 @@ ADMIN_PASS=${DRUPAL_ADMIN_PASSWORD:-admin}
 ADMIN_EMAIL=${DRUPAL_ADMIN_EMAIL:-admin@example.com}
 DRUSH_BIN="/opt/drupal/vendor/bin/drush"
 DRUPAL_ROOT="/opt/drupal/web"
+MODULE_SRC="${DRUPAL_ROOT}/modules/custom/temporal_cms"
+MODULE_SYMLINK="${DRUPAL_ROOT}/sites/all/modules/custom/temporal_cms"
 
 mysql_cmd() {
   mysql \
@@ -92,6 +94,30 @@ install_drupal() {
     }
 }
 
+link_temporal_module() {
+  if [ ! -d "${MODULE_SRC}" ]; then
+    return
+  fi
+  local link_dir
+  link_dir="$(dirname "${MODULE_SYMLINK}")"
+  mkdir -p "${link_dir}"
+  if [ -e "${MODULE_SYMLINK}" ] || [ -L "${MODULE_SYMLINK}" ]; then
+    rm -rf "${MODULE_SYMLINK}"
+  fi
+  ln -s "${MODULE_SRC}" "${MODULE_SYMLINK}"
+  log "Linked temporal_cms module into sites/all/modules/custom"
+}
+
+enable_temporal_module() {
+  if [ -d "${MODULE_SRC}" ]; then
+    log "Enabling temporal_cms module"
+    su -s /bin/bash www-data -c "${DRUSH_BIN} --root=${DRUPAL_ROOT} en temporal_cms -y" >/tmp/drush-enable.log 2>&1 || {
+      cat /tmp/drush-enable.log
+      log "Warning: failed to enable temporal_cms module"
+    }
+  fi
+}
+
 wait_for_db
 
 if drush_status && grep -qi "Successful" /tmp/drush-status; then
@@ -101,5 +127,8 @@ else
   chown -R www-data:www-data /opt/drupal
   log "Drupal CMS install complete."
 fi
+
+link_temporal_module
+enable_temporal_module
 
 exec apache2-foreground

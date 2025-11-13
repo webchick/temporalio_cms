@@ -22,6 +22,10 @@ run_quiet() {
 
 # Temporal has some hankiness so we lean on their docker compose setup.
 # Pull in the official Temporal docker-compose so we stay aligned with upstream.
+PROJECT_ROOT="${PROJECT_ROOT:-$(pwd)}"
+export PROJECT_ROOT
+export COMPOSE_PROJECT_DIR="$PROJECT_ROOT"
+
 log "Initializing Temporal docker-compose submodule"
 run_quiet git submodule update --init --recursive
 
