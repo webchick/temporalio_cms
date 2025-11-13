@@ -10,7 +10,6 @@ use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\node\Entity\Node;
 use Drupal\node\Event\NodeInsertEvent;
 use Drupal\node\Event\NodeUpdateEvent;
-use Drupal\node\NodeEvents;
 use Drupal\temporal_cms\Service\TemporalClient;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
@@ -33,8 +32,8 @@ class NodeWorkflowSubscriber implements EventSubscriberInterface {
 
   public static function getSubscribedEvents(): array {
     return [
-      NodeEvents::INSERT => 'onNodeInsert',
-      NodeEvents::UPDATE => 'onNodeUpdate',
+      NodeInsertEvent::class => 'onNodeInsert',
+      NodeUpdateEvent::class => 'onNodeUpdate',
     ];
   }
 

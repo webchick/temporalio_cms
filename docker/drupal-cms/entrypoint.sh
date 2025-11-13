@@ -118,6 +118,14 @@ enable_temporal_module() {
   fi
 }
 
+rebuild_caches() {
+  log "Rebuilding Drupal caches"
+  su -s /bin/bash www-data -c "${DRUSH_BIN} --root=${DRUPAL_ROOT} cr -y" >/tmp/drush-cr.log 2>&1 || {
+    cat /tmp/drush-cr.log
+    log "Warning: cache rebuild failed"
+  }
+}
+
 wait_for_db
 
 if drush_status && grep -qi "Successful" /tmp/drush-status; then
@@ -129,6 +137,7 @@ else
 fi
 
 link_temporal_module
+rebuild_caches
 enable_temporal_module
 
 exec apache2-foreground

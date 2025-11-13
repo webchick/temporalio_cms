@@ -10,7 +10,7 @@ services:
     arguments:
       - '@temporal_cms.temporal_client'
       - '@config.factory'
-      - '@keyvalue.factory'
+      - '@keyvalue'
       - '@current_user'
       - '@logger.factory'
       - '@entity_type.manager'

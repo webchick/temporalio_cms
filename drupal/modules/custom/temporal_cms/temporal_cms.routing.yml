@@ -1,7 +1,7 @@
 temporal_cms.settings:
   path: '/admin/config/services/temporal-cms'
   defaults:
-    _form: '\\Drupal\\temporal_cms\\Form\\TemporalSettingsForm'
+    _form: '\Drupal\temporal_cms\Form\TemporalSettingsForm'
     _title: 'Temporal CMS settings'
   requirements:
     _permission: 'administer site configuration'
@@ -9,7 +9,7 @@ temporal_cms.settings:
 temporal_cms.signal:
   path: '/temporal/signal/{node}'
   defaults:
-    _controller: '\\Drupal\\temporal_cms\\Controller\\SignalController::send'
+    _controller: '\Drupal\temporal_cms\Controller\SignalController::send'
     _title: 'Send Temporal signal'
   requirements:
     _permission: 'access content'

@@ -22,7 +22,7 @@ class SignalController extends ControllerBase {
 
   public static function create(ContainerInterface $container): self {
     return new self(
-      $container->get('keyvalue.factory'),
+      $container->get('keyvalue'),
       $container->get('temporal_cms.temporal_client'),
       $container->get('csrf_token'),
     );
