@@ -1,10 +1,44 @@
 # Temporal CMS Orchestration Sandbox
 
-This repo explores how Temporal can coordinate complex editorial workflows across Drupal and WordPress. It contains three layers:
+This sandbox shows how Temporal orchestrates a multi-CMS publishing flow (Drupal + WordPress) from a single worker. Editors interact with familiar Drupal/WordPress UIs while Temporal coordinates translation, compliance, approvals, and timed publishing behind the scenes.
 
-1. **Full-featured orchestration sample** – the `worker/` service, Drupal module, and WordPress plugin that power the end-to-end demo (translation → compliance → publish).
-2. **Adapters** – CMS-specific modules/plugins that start workflows from UI events and surface live status/actions to editors.
-3. **Infrastructure scaffolding** – Docker/Dev Container plans (`docker/`, `.devcontainer/`) to spin up Temporal + worker + CMS instances, plus a `simple-demo/` directory outlining a smaller “Scheduled Publish” tutorial.
+## High-Level Architecture
+
+```
+                 ┌──────────────────────────────────────┐
+                 │           Docker Compose             │
+                 │  (Temporal + DBs + CMS containers)   │
+                 └──────────────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────┐   signals / status   ┌──────────────────────┐
+│ Drupal CMS (8082)   │◄────────────────────►│  REST Proxy (4000)    │
+│ - temporal_cms mod  │                      │  + Temporal Worker    │
+│ - auto install +    │                      │  (Node/TypeScript)    │
+│   hooks to Temporal │                      │  - Workflow start     │
+└─────────────────────┘                      │  - Signals/queries    │
+       ▲                                     └──────────┬───────────┘
+       │ publish status / translations                  │ Temporal gRPC
+       │                                                ▼
+┌─────────────────────┐                  ┌────────────────────────────┐
+│ WordPress (8081)    │                  │ Temporal Server + Postgres │
+│ - wp-temporal-cms   │                  │ (docker/temporal submodule)│
+│   plugin            │                  └────────────────────────────┘
+└─────────────────────┘
+```
+
+- **Drupal module** (`drupal/modules/custom/temporal_cms`) automatically installs, waits for DB, and hooks node inserts/updates to start workflows. A future UX adds buttons for translation/approval/publish signals so editors never leave Drupal.
+- **WordPress plugin** mirrors the Drupal integration for parity (auto-install via WP-CLI, starts workflows from WP UI).
+- **REST proxy + Temporal worker** (Node/TypeScript under `worker/`):
+  - Provides HTTP endpoints (`/workflows`, `/signals/:id/:signal`, `/workflows/:id/status`).
+  - Talks to Temporal via gRPC, executes the workflow (translation → compliance → approval → scheduled publish).
+- **Temporal stack + infrastructure**: Compose spins up Postgres, Elasticsearch, Temporal server, UI, namespace bootstrapper, and the CMS containers.
+
+## Project Layers
+
+1. **Full-featured orchestration sample** – the worker, Drupal module, and WordPress plugin implementing the content lifecycle workflow.
+2. **CMS adapters** – Drupal/WordPress code that starts workflows from editor actions and (soon) surfaces live status + signal buttons.
+3. **Infrastructure scaffolding** – Docker + Dev Container configs that reuse the official Temporal compose stack and wire in the adapters. A `simple-demo/` folder holds a smaller tutorial build.
 
 ## Quickstart
 
