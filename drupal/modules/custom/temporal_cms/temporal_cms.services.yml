@@ -16,3 +16,12 @@ services:
       - '@entity_type.manager'
     tags:
       - { name: event_subscriber }
+  temporal_cms.workflow_manager:
+    class: Drupal\temporal_cms\Service\TemporalWorkflowManager
+    arguments:
+      - '@temporal_cms.temporal_client'
+      - '@config.factory'
+      - '@keyvalue'
+      - '@current_user'
+      - '@logger.factory'
+      - '@entity_type.manager'

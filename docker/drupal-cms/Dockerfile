@@ -41,9 +41,6 @@ COPY drupal/modules/custom/temporal_cms /opt/drupal/modules/custom/temporal_cms
 RUN rm -rf /var/www/html \
     && ln -s /opt/drupal/web /var/www/html \
     && printf "memory_limit=256M\ndisplay_errors=Off\nerror_reporting=E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED\n" > /usr/local/etc/php/conf.d/memory-limit.ini \
-    && mkdir -p /opt/drupal/web/modules/custom \
-    && rm -rf /opt/drupal/web/modules/custom/temporal_cms \
-    && ln -s /opt/drupal/modules/custom/temporal_cms /opt/drupal/web/modules/custom/temporal_cms \
     && chown -R www-data:www-data /opt/drupal
 
 COPY drupal-cms/entrypoint.sh /entrypoint.sh

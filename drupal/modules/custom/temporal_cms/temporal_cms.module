@@ -2,6 +2,7 @@
 
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\Core\Entity\EntityInterface;
 
 /**
  * Implements hook_entity_base_field_info().
@@ -10,7 +11,7 @@ function temporal_cms_entity_base_field_info(EntityTypeInterface $entity_type) {
   $fields = [];
 
   if ($entity_type->id() === 'node') {
-    $fields['temporal_workflow_id'] = BaseFieldDefinition::create('string')
+    $fields['temporal_cms_workflow_id'] = BaseFieldDefinition::create('string')
       ->setLabel(t('Temporal workflow ID'))
       ->setDescription(t('Stores the ID of the Temporal workflow linked to this content.'))
       ->setReadOnly(FALSE)
@@ -23,4 +24,31 @@ function temporal_cms_entity_base_field_info(EntityTypeInterface $entity_type) {
   }
 
   return $fields;
+}
+
+/**
+ * Implements hook_entity_insert().
+ */
+function temporal_cms_entity_insert(EntityInterface $entity): void {
+  temporal_cms_trigger_workflow($entity, 'create');
+}
+
+/**
+ * Implements hook_entity_update().
+ */
+function temporal_cms_entity_update(EntityInterface $entity): void {
+  temporal_cms_trigger_workflow($entity, 'update');
+}
+
+/**
+ * Helper to invoke the workflow manager.
+ */
+function temporal_cms_trigger_workflow(EntityInterface $entity, string $trigger): void {
+  if ($entity->getEntityTypeId() !== 'node') {
+    return;
+  }
+
+  /** @var \Drupal\temporal_cms\Service\TemporalWorkflowManager $manager */
+  $manager = \Drupal::service('temporal_cms.workflow_manager');
+  $manager->triggerWorkflow($entity, $trigger);
 }

@@ -7,6 +7,7 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\KeyValueStore\KeyValueFactoryInterface;
 use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
+use Drupal\Core\Logger\LoggerChannelInterface;
 use Drupal\node\Entity\Node;
 use Drupal\node\Event\NodeInsertEvent;
 use Drupal\node\Event\NodeUpdateEvent;
@@ -30,22 +31,30 @@ class NodeWorkflowSubscriber implements EventSubscriberInterface {
     private readonly EntityTypeManagerInterface $entityTypeManager,
   ) {}
 
+  protected function logger(): LoggerChannelInterface {
+    return $this->loggerFactory->get('temporal_cms');
+  }
+
   public static function getSubscribedEvents(): array {
     return [
-      NodeInsertEvent::class => 'onNodeInsert',
-      NodeUpdateEvent::class => 'onNodeUpdate',
+      'node.insert' => 'onNodeInsert',
+      'node.update' => 'onNodeUpdate',
     ];
   }
 
   public function onNodeInsert(NodeInsertEvent $event): void {
+    $this->logger()->info('Node insert detected for @nid.', ['@nid' => $event->getNode()->id()]);
     if ($this->suppressStart) {
+      $this->logger()->info('Workflow start suppressed (insert).');
       return;
     }
     $this->maybeStartWorkflow($event->getNode(), 'create');
   }
 
   public function onNodeUpdate(NodeUpdateEvent $event): void {
+    $this->logger()->info('Node update detected for @nid.', ['@nid' => $event->getNode()->id()]);
     if ($this->suppressStart) {
+      $this->logger()->info('Workflow start suppressed (update).');
       return;
     }
     $node = $event->getOriginal();
@@ -56,6 +65,12 @@ class NodeWorkflowSubscriber implements EventSubscriberInterface {
       if ($node instanceof Node && !$node->isPublished() && $updated->isPublished()) {
         $this->maybeStartWorkflow($updated, 'publish');
       }
+      else {
+        $this->logger()->info('Publish trigger not met for @nid.', ['@nid' => $updated->id()]);
+      }
+    }
+    else {
+      $this->logger()->info('start_on_publish disabled; skipping publish trigger.');
     }
   }
 
@@ -64,10 +79,18 @@ class NodeWorkflowSubscriber implements EventSubscriberInterface {
     $monitored = array_filter($config->get('monitored_content_types') ?? []);
     $start_on_create = $config->get('start_on_create');
 
+    $this->logger()->info('maybeStartWorkflow trigger=@trigger bundle=@bundle monitored=@monitored', [
+      '@trigger' => $trigger,
+      '@bundle' => $node->bundle(),
+      '@monitored' => implode(',', $monitored),
+    ]);
+
     if ($trigger === 'create' && !$start_on_create) {
+      $this->logger()->info('start_on_create disabled; skipping workflow start.');
       return;
     }
     if (!in_array($node->bundle(), $monitored, TRUE)) {
+      $this->logger()->info('Bundle @bundle not monitored; skipping workflow start.', ['@bundle' => $node->bundle()]);
       return;
     }
 
@@ -81,23 +104,31 @@ class NodeWorkflowSubscriber implements EventSubscriberInterface {
     $workflowId = $this->temporalClient->startWorkflow($payload);
     if ($workflowId) {
       $this->keyValueFactory->get(self::STORE_KEY)->set((string) $node->id(), $workflowId);
-      $this->loggerFactory->get('temporal_cms')->info('Temporal workflow @workflow started for node @nid.', [
+      $this->logger()->info('Temporal workflow @workflow started for node @nid.', [
         '@workflow' => $workflowId,
         '@nid' => $node->id(),
       ]);
       $this->persistWorkflowId($node, $workflowId);
     }
+    else {
+      $this->logger()->error('Temporal workflow failed to start for node @nid.', ['@nid' => $node->id()]);
+    }
   }
 
   protected function persistWorkflowId(Node $node, string $workflowId): void {
-    if (!$node->hasField('temporal_workflow_id')) {
+    if (!$node->hasField('temporal_cms_workflow_id')) {
+      $this->logger()->warning('Node @nid missing temporal_cms_workflow_id field.', ['@nid' => $node->id()]);
       return;
     }
 
-    $node->set('temporal_workflow_id', $workflowId);
+    $node->set('temporal_cms_workflow_id', $workflowId);
     $this->suppressStart = TRUE;
     try {
       $this->entityTypeManager->getStorage('node')->save($node);
+      $this->logger()->info('Persisted workflow @workflow to node @nid.', [
+        '@workflow' => $workflowId,
+        '@nid' => $node->id(),
+      ]);
     }
     finally {
       $this->suppressStart = FALSE;

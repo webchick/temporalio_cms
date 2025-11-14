@@ -41,8 +41,8 @@ class SignalController extends ControllerBase {
     }
 
     $workflowId = NULL;
-    if ($node->hasField('temporal_workflow_id') && !$node->get('temporal_workflow_id')->isEmpty()) {
-      $workflowId = $node->get('temporal_workflow_id')->value;
+    if ($node->hasField('temporal_cms_workflow_id') && !$node->get('temporal_cms_workflow_id')->isEmpty()) {
+      $workflowId = $node->get('temporal_cms_workflow_id')->value;
     }
     if (!$workflowId) {
       $workflowId = $this->keyValueFactory->get('temporal_cms.workflow_map')->get((string) $node->id());
